@@ -1063,20 +1063,27 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	state.SetBalance(consensus.SystemAddress, big.NewInt(0))
 	state.AddBalance(coinbase, balance)
 
-	//  Delete 1/16 rewords, (according to netmarble requirements)
-	//doDistributeSysReward := state.GetBalance(common.HexToAddress(systemcontract.SystemRewardContract)).Cmp(maxSystemBalance) < 0
-	//if doDistributeSysReward {
-	//	var rewards = new(big.Int)
-	//	rewards = rewards.Rsh(balance, systemRewardPercent)
-	//	if rewards.Cmp(common.Big0) > 0 {
-	//		err := p.distributeToSystem(rewards, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		log.Trace("distribute to system reward pool", "block hash", header.Hash(), "amount", rewards)
-	//		balance = balance.Sub(balance, rewards)
-	//	}
-	//}
+	if rules := p.chainConfig.Rules(header.Number); rules.HasBlockRewards {
+		blockRewards := p.chainConfig.Parlia.BlockRewards
+		// if we have enabled block rewards and rewards are greater than 0 then
+		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
+			state.AddBalance(coinbase, blockRewards)
+		}
+	}
+
+	doDistributeSysReward := state.GetBalance(common.HexToAddress(systemcontract.SystemRewardContract)).Cmp(maxSystemBalance) < 0
+	if doDistributeSysReward {
+		var rewards = new(big.Int)
+		rewards = rewards.Rsh(balance, systemRewardPercent)
+		if rewards.Cmp(common.Big0) > 0 {
+			err := p.distributeToSystem(rewards, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
+			if err != nil {
+				return err
+			}
+			log.Trace("distribute to system reward pool", "block hash", header.Hash(), "amount", rewards)
+			balance = balance.Sub(balance, rewards)
+		}
+	}
 	log.Trace("distribute to validator contract", "block hash", header.Hash(), "amount", balance)
 	return p.distributeToValidator(balance, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 }
@@ -1347,7 +1354,7 @@ func applyMessage(
 		msg.Gas(),
 		msg.Value(),
 	)
-	if err != nil {
+	if err != nil && len(ret) > 64 {
 		log.Error("apply message failed", "msg", string(ret[64+4:]), "err", err)
 	}
 	return msg.Gas() - returnGas, err
