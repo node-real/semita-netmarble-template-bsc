@@ -48,6 +48,25 @@ const gasFreeToAddressABI = `
           "type": "uint32"
         }
       ],
+      "name": "BurnRatioChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "prevValue",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "newValue",
+          "type": "uint32"
+        }
+      ],
       "name": "EpochBlockIntervalChanged",
       "type": "event"
     },
@@ -89,17 +108,11 @@ const gasFreeToAddressABI = `
         {
           "indexed": false,
           "internalType": "address",
-          "name": "oldFreeGasAddressAdmin",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "newFreeGasAddressAdmin",
+          "name": "freeGasAddressAdmin",
           "type": "address"
         }
       ],
-      "name": "FreeGasAddressAdminChanged",
+      "name": "FreeGasAddressAdmin",
       "type": "event"
     },
     {
@@ -113,25 +126,6 @@ const gasFreeToAddressABI = `
         }
       ],
       "name": "FreeGasAddressRemoved",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint32",
-          "name": "prevValue",
-          "type": "uint32"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint32",
-          "name": "newValue",
-          "type": "uint32"
-        }
-      ],
-      "name": "FreeGasAddressSizeChanged",
       "type": "event"
     },
     {
@@ -231,7 +225,7 @@ const gasFreeToAddressABI = `
     },
     {
       "inputs": [],
-      "name": "freeGasAddressAdmin",
+      "name": "BURN_ADDRESS",
       "outputs": [
         {
           "internalType": "address",
@@ -244,12 +238,25 @@ const gasFreeToAddressABI = `
     },
     {
       "inputs": [],
-      "name": "freeGasAddressSize",
+      "name": "BURN_RATIO_SCALE",
       "outputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "",
-          "type": "uint32"
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "freeGasAddressAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
         }
       ],
       "stateMutability": "view",
@@ -434,6 +441,11 @@ const gasFreeToAddressABI = `
           "type": "uint32"
         },
         {
+          "internalType": "uint32",
+          "name": "burnRatio",
+          "type": "uint32"
+        },
+        {
           "internalType": "uint256",
           "name": "minValidatorStakeAmount",
           "type": "uint256"
@@ -607,6 +619,58 @@ const gasFreeToAddressABI = `
     },
     {
       "inputs": [],
+      "name": "getBurnRatio",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "newValue",
+          "type": "uint32"
+        }
+      ],
+      "name": "setBurnRatio",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBurnRatioScale",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBurnAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "getMinValidatorStakeAmount",
       "outputs": [
         {
@@ -666,19 +730,6 @@ const gasFreeToAddressABI = `
         }
       ],
       "name": "setFreeGasAddressAdmin",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint32",
-          "name": "newFreeGasAddressSize",
-          "type": "uint32"
-        }
-      ],
-      "name": "setFreeGasAddressSize",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
