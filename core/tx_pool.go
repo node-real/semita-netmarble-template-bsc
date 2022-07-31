@@ -1604,7 +1604,6 @@ func (as *accountSet) add(addr common.Address) {
 }
 
 func (as *accountSet) remove(addr common.Address) {
-	as.accounts[addr] = struct{}{}
 	delete(as.accounts, addr)
 	as.cache = nil
 }
