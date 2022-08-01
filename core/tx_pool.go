@@ -1273,10 +1273,10 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		for address, _ := range pool.locals.accounts {
 			_, exist := pool.gasFreeAddressMap[address]
 			if !exist {
+				log.Debug("remove from locals address:", address)
 				pool.locals.remove(address)
 			}
 		}
-		log.Debug("gasFreeAddressMap count", len(pool.gasFreeAddressMap), " locals.accounts count:", len(pool.locals.accounts))
 	}
 
 	// Inject any transactions discarded due to reorgs
