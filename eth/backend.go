@@ -225,7 +225,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = stack.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = core.NewTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI))
+	eth.txPool = core.NewTxPool0(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI))
 
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit

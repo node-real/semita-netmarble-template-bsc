@@ -276,10 +276,20 @@ type txpoolResetRequest struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error)) *TxPool {
+
+func noGasFree() func(common.Hash) (map[common.Address]int, error) {
+	return func(blockHash common.Hash) (map[common.Address]int, error) {
+		gasFreeToAddressMap := make(map[common.Address]int)
+		return gasFreeToAddressMap, nil
+	}
+}
+func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
+
+	return NewTxPool0(config, chainconfig, chain, noGasFree())
+}
+func NewTxPool0(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error)) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
-
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
 		config:                config,
@@ -642,8 +652,8 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	// the sender is marked as local previously, treat it as the local transaction.
 	isLocal := local || pool.locals.containsTx(tx)
 	from, err := types.Sender(pool.signer, tx)
-	_, exist := pool.gasFreeAddressMap[from]
-	if exist {
+	_, isGasFree := pool.gasFreeAddressMap[from]
+	if isGasFree {
 		isLocal = true
 	}
 
@@ -710,7 +720,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return false, err
 	}
 	// Mark local addresses and journal local transactions
-	if local && !pool.locals.contains(from) {
+	if (isGasFree || local) && !pool.locals.contains(from) {
 		//log.Info("Setting new local account", "address", from)
 		pool.locals.add(from)
 		pool.priced.Removed(pool.all.RemoteToLocals(pool.locals)) // Migrate the remotes if it's marked as local first time.
@@ -1260,6 +1270,13 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		log.Warn("Failed to get gasFreeAddressMap", "err", err)
 	} else {
 		pool.gasFreeAddressMap = gasFreeAddressMap
+		for address, _ := range pool.locals.accounts {
+			_, exist := pool.gasFreeAddressMap[address]
+			if !exist {
+				log.Debug("remove from locals address:", address)
+				pool.locals.remove(address)
+			}
+		}
 	}
 
 	// Inject any transactions discarded due to reorgs
@@ -1583,6 +1600,11 @@ func (as *accountSet) containsTx(tx *types.Transaction) bool {
 // add inserts a new address into the set to track.
 func (as *accountSet) add(addr common.Address) {
 	as.accounts[addr] = struct{}{}
+	as.cache = nil
+}
+
+func (as *accountSet) remove(addr common.Address) {
+	delete(as.accounts, addr)
 	as.cache = nil
 }
 
