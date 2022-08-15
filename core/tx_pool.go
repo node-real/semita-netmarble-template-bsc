@@ -1278,7 +1278,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		for address, _ := range pool.locals.gasFreeAccounts {
 			_, exist := pool.gasFreeAddressMap[address]
 			if !exist {
-				log.Debug("remove removeGasFree :", address)
+				log.Debug("Remove removeGasFree :", address)
 				pool.locals.removeGasFree(address)
 			}
 		}
