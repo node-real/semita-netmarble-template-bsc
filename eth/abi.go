@@ -1,6 +1,6 @@
 package eth
 
-const gasFreeABI = `
+const chainConfigABI = `
 [
     {
       "inputs": [
