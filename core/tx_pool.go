@@ -277,7 +277,7 @@ type txpoolResetRequest struct {
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
 
-func noGasFree() func(common.Hash) (map[common.Address]int, error) {
+func placeholderFunc() func(common.Hash) (map[common.Address]int, error) {
 	return func(blockHash common.Hash) (map[common.Address]int, error) {
 		gasFreeToAddressMap := make(map[common.Address]int)
 		return gasFreeToAddressMap, nil
@@ -285,9 +285,9 @@ func noGasFree() func(common.Hash) (map[common.Address]int, error) {
 }
 func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
 
-	return NewTxPool0(config, chainconfig, chain, noGasFree())
+	return NewEnhanceTxPool(config, chainconfig, chain, placeholderFunc())
 }
-func NewTxPool0(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error)) *TxPool {
+func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error)) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -652,9 +652,9 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	// the sender is marked as local previously, treat it as the local transaction.
 	isLocal := local || pool.locals.containsTx(tx)
 	from, err := types.Sender(pool.signer, tx)
-	_, isGasFree := pool.gasFreeAddressMap[from]
-	if isGasFree {
+	if _, isGasFree := pool.gasFreeAddressMap[from]; isGasFree {
 		isLocal = true
+		local = true
 	}
 
 	// If the transaction fails basic validation, discard it
@@ -720,7 +720,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return false, err
 	}
 	// Mark local addresses and journal local transactions
-	if (isGasFree || local) && !pool.locals.contains(from) {
+	if local && !pool.locals.contains(from) {
 		//log.Info("Setting new local account", "address", from)
 		pool.locals.add(from)
 		pool.priced.Removed(pool.all.RemoteToLocals(pool.locals)) // Migrate the remotes if it's marked as local first time.

@@ -225,7 +225,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = stack.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = core.NewTxPool0(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI))
+	eth.txPool = core.NewEnhanceTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI))
 
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
@@ -612,8 +612,8 @@ func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel() // cancel when we are finished consuming integers
 
-		gasFreeToAddressABI, err := abi.JSON(strings.NewReader(gasFreeToAddressABI))
-		data, err := gasFreeToAddressABI.Pack(method)
+		gasFreeABI, err := abi.JSON(strings.NewReader(gasFreeABI))
+		data, err := gasFreeABI.Pack(method)
 		if err != nil {
 			log.Error("Unable to pack tx for getFreeGasAddress", "error", err)
 			return nil, err
@@ -636,7 +636,7 @@ func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common
 		)
 		out := ret0
 
-		if err := gasFreeToAddressABI.UnpackIntoInterface(out, method, result); err != nil {
+		if err := gasFreeABI.UnpackIntoInterface(out, method, result); err != nil {
 			return nil, err
 		}
 
