@@ -652,9 +652,9 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	// the sender is marked as local previously, treat it as the local transaction.
 	isLocal := local || pool.locals.containsTx(tx)
 	from, err := types.Sender(pool.signer, tx)
-	if _, isGasFree := pool.gasFreeAddressMap[from]; isGasFree {
+	_, isGasFreeAccount := pool.gasFreeAddressMap[from]
+	if isGasFreeAccount {
 		isLocal = true
-		local = true
 	}
 
 	// If the transaction fails basic validation, discard it
@@ -720,9 +720,14 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return false, err
 	}
 	// Mark local addresses and journal local transactions
-	if local && !pool.locals.contains(from) {
+	if (isGasFreeAccount || local) && !pool.locals.contains(from) {
 		//log.Info("Setting new local account", "address", from)
-		pool.locals.add(from)
+		if isGasFreeAccount {
+			pool.locals.addGasFree(from)
+		} else {
+			pool.locals.add(from)
+
+		}
 		pool.priced.Removed(pool.all.RemoteToLocals(pool.locals)) // Migrate the remotes if it's marked as local first time.
 	}
 	if isLocal {
@@ -1270,11 +1275,11 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		log.Warn("Failed to get gasFreeAddressMap", "err", err)
 	} else {
 		pool.gasFreeAddressMap = gasFreeAddressMap
-		for address, _ := range pool.locals.accounts {
+		for address, _ := range pool.locals.gasFreeAccounts {
 			_, exist := pool.gasFreeAddressMap[address]
 			if !exist {
 				log.Debug("remove from locals address:", address)
-				pool.locals.remove(address)
+				pool.locals.removeGasFree(address)
 			}
 		}
 	}
@@ -1560,9 +1565,10 @@ func (a addressesByHeartbeat) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 // accountSet is simply a set of addresses to check for existence, and a signer
 // capable of deriving addresses from transactions.
 type accountSet struct {
-	accounts map[common.Address]struct{}
-	signer   types.Signer
-	cache    *[]common.Address
+	accounts        map[common.Address]struct{}
+	gasFreeAccounts map[common.Address]struct{}
+	signer          types.Signer
+	cache           *[]common.Address
 }
 
 // newAccountSet creates a new address set with an associated signer for sender
@@ -1602,8 +1608,13 @@ func (as *accountSet) add(addr common.Address) {
 	as.accounts[addr] = struct{}{}
 	as.cache = nil
 }
+func (as *accountSet) addGasFree(addr common.Address) {
+	as.accounts[addr] = struct{}{}
+	as.gasFreeAccounts[addr] = struct{}{}
+	as.cache = nil
+}
 
-func (as *accountSet) remove(addr common.Address) {
+func (as *accountSet) removeGasFree(addr common.Address) {
 	delete(as.accounts, addr)
 	as.cache = nil
 }
