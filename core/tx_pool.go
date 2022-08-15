@@ -721,12 +721,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	}
 	// Mark local addresses and journal local transactions
 	if (isGasFreeAccount || local) && !pool.locals.contains(from) {
-		//log.Info("Setting new local account", "address", from)
 		if isGasFreeAccount {
+			log.Debug("Setting new local isGasFreeAccount", "address", from)
 			pool.locals.addGasFree(from)
 		} else {
+			log.Debug("Setting new local account", "address", from)
 			pool.locals.add(from)
-
 		}
 		pool.priced.Removed(pool.all.RemoteToLocals(pool.locals)) // Migrate the remotes if it's marked as local first time.
 	}
@@ -1278,7 +1278,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		for address, _ := range pool.locals.gasFreeAccounts {
 			_, exist := pool.gasFreeAddressMap[address]
 			if !exist {
-				log.Debug("remove from locals address:", address)
+				log.Debug("remove removeGasFree :", address)
 				pool.locals.removeGasFree(address)
 			}
 		}
@@ -1616,6 +1616,7 @@ func (as *accountSet) addGasFree(addr common.Address) {
 
 func (as *accountSet) removeGasFree(addr common.Address) {
 	delete(as.accounts, addr)
+	delete(as.gasFreeAccounts, addr)
 	as.cache = nil
 }
 
