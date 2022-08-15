@@ -21,9 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/common/systemcontract"
 	"math/big"
 	"runtime"
 	"strings"
@@ -32,8 +29,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/common/systemcontract"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/clique"
 	"github.com/ethereum/go-ethereum/consensus/parlia"
@@ -601,8 +601,8 @@ func (s *Ethereum) Stop() error {
 }
 
 // getCurrentGasFreeAddressMapFunc get current GasFreeAddressMapFunc
-func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (map[common.Address]int, error) {
-	return func(blockHash common.Hash) (map[common.Address]int, error) {
+func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (map[common.Address]uint, error) {
+	return func(blockHash common.Hash) (map[common.Address]uint, error) {
 		// block
 		blockNr := rpc.BlockNumberOrHashWithHash(blockHash, false)
 
@@ -640,9 +640,9 @@ func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common
 			return nil, err
 		}
 
-		gasFreeToAddressMap := make(map[common.Address]int, len(*ret0))
+		gasFreeToAddressMap := make(map[common.Address]uint, len(*ret0))
 		for i, address := range *ret0 {
-			gasFreeToAddressMap[address] = i + 1
+			gasFreeToAddressMap[address] = uint(i) + 1
 		}
 		return gasFreeToAddressMap, nil
 	}

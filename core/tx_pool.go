@@ -251,8 +251,8 @@ type TxPool struct {
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
 	journal *txJournal  // Journal of local transaction to back up to disk
 
-	gasFreeAddressMap     map[common.Address]int                            // from address that can join tx_pool for free
-	gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error) // add func to get gasFreeAddressMap
+	gasFreeAddressMap     map[common.Address]uint                            // from address that can join tx_pool for free
+	gasFreeAddressMapFunc func(common.Hash) (map[common.Address]uint, error) // add func to get gasFreeAddressMap
 
 	pending map[common.Address]*txList   // All currently processable transactions
 	queue   map[common.Address]*txList   // Queued but non-processable transactions
@@ -277,17 +277,17 @@ type txpoolResetRequest struct {
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
 
-func placeholderFunc() func(common.Hash) (map[common.Address]int, error) {
-	return func(blockHash common.Hash) (map[common.Address]int, error) {
-		gasFreeToAddressMap := make(map[common.Address]int)
+func getNoGasFreeAddressMapFunc() func(common.Hash) (map[common.Address]uint, error) {
+	return func(blockHash common.Hash) (map[common.Address]uint, error) {
+		gasFreeToAddressMap := make(map[common.Address]uint)
 		return gasFreeToAddressMap, nil
 	}
 }
 func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
 
-	return NewEnhanceTxPool(config, chainconfig, chain, placeholderFunc())
+	return NewEnhanceTxPool(config, chainconfig, chain, getNoGasFreeAddressMapFunc())
 }
-func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]int, error)) *TxPool {
+func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]uint, error)) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -307,7 +307,7 @@ func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chai
 		reorgDoneCh:           make(chan chan struct{}),
 		reorgShutdownCh:       make(chan struct{}),
 		gasPrice:              new(big.Int).SetUint64(config.PriceLimit),
-		gasFreeAddressMap:     make(map[common.Address]int),
+		gasFreeAddressMap:     make(map[common.Address]uint),
 		gasFreeAddressMapFunc: gasFreeAddressMapFunc,
 	}
 	pool.locals = newAccountSet(pool.signer)
