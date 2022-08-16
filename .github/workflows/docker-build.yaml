@@ -47,8 +47,8 @@ jobs:
         aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com
         aws ecr --region $REGION describe-repositories --registry-id $ECR_REGISTRY_ID --repository-names ${GITHUB_REPOSITORY#*/} || aws ecr --region $REGION create-repository --registry-id $ECR_REGISTRY_ID --repository-name ${GITHUB_REPOSITORY#*/}
         aws ecr --region $REGION set-repository-policy --registry-id $ECR_REGISTRY_ID --repository-name ${GITHUB_REPOSITORY#*/} --policy-text file:///home/runner/repo-access-permissions.json
-        docker build -t ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_REF#refs/*/} .
-        docker push ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_REF#refs/*/}
+        docker build -t ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA} .
+        docker push ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA}
   # CD:
   #   needs: [CI]
   #   runs-on: [self-hosted,qa-infra-k8s]
