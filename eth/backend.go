@@ -612,8 +612,8 @@ func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel() // cancel when we are finished consuming integers
 
-		chainConfigABI, err := abi.JSON(strings.NewReader(chainConfigABI))
-		data, err := chainConfigABI.Pack(method)
+		chainConfig, err := abi.JSON(strings.NewReader(chainConfigABI))
+		data, err := chainConfig.Pack(method)
 		if err != nil {
 			log.Error("Unable to pack tx for getFreeGasAddress", "error", err)
 			return nil, err
@@ -636,7 +636,7 @@ func getCurrentGasFreeAddressMapFunc(ee *ethapi.PublicBlockChainAPI) func(common
 		)
 		out := ret0
 
-		if err := chainConfigABI.UnpackIntoInterface(out, method, result); err != nil {
+		if err := chainConfig.UnpackIntoInterface(out, method, result); err != nil {
 			return nil, err
 		}
 
