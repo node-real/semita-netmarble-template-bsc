@@ -29,12 +29,6 @@ const (
 	DeployerProxyContract  = "0x0000000000000000000000000000000000007005"
 )
 
-// custom contracts
-const (
-	RewardContract  = "0x0000000000000000000000000000000010000000"
-	ReserveContract = "0x0000000000000000000000000000000010000001"
-)
-
 var (
 	StakingPoolContractAddress    = common.HexToAddress(StakingPoolContract)
 	GovernanceContractAddress     = common.HexToAddress(GovernanceContract)
