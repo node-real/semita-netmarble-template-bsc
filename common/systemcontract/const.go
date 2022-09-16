@@ -29,12 +29,6 @@ const (
 	DeployerProxyContract  = "0x0000000000000000000000000000000000007005"
 )
 
-// custom contracts
-const (
-	RewardContract  = "0x0000000000000000000000000000000010000000"
-	ReserveContract = "0x0000000000000000000000000000000010000001"
-)
-
 var (
 	StakingPoolContractAddress    = common.HexToAddress(StakingPoolContract)
 	GovernanceContractAddress     = common.HexToAddress(GovernanceContract)
@@ -61,9 +55,6 @@ var systemContracts = map[common.Address]bool{
 	common.HexToAddress(ChainConfigContract):    true,
 	common.HexToAddress(RuntimeUpgradeContract): true,
 	common.HexToAddress(DeployerProxyContract):  true,
-	// custom smart contracts
-	common.HexToAddress(RewardContract):  true,
-	common.HexToAddress(ReserveContract): true,
 }
 
 func IsSystemContract(address common.Address) bool {
