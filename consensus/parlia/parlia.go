@@ -1058,12 +1058,8 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	txs *[]*types.Transaction, receipts *[]*types.Receipt, receivedTxs *[]*types.Transaction, usedGas *uint64, mining bool) error {
 	coinbase := header.Coinbase
 	balance := state.GetBalance(consensus.SystemAddress)
-	if balance.Cmp(common.Big0) <= 0 {
-		return nil
-	}
 	state.SetBalance(consensus.SystemAddress, big.NewInt(0))
 	state.AddBalance(coinbase, balance)
-
 	if rules := p.chainConfig.Rules(header.Number); rules.HasBlockRewards {
 		blockRewards := p.chainConfig.Parlia.BlockRewards
 		// if we have enabled block rewards and rewards are greater than 0 then
@@ -1071,6 +1067,9 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 			state.AddBalance(coinbase, blockRewards)
 			balance = balance.Add(balance, blockRewards)
 		}
+	}
+	if balance.Cmp(common.Big0) <= 0 {
+		return nil
 	}
 	// remove 1/16 reward according to netmarble
 	//doDistributeSysReward := state.GetBalance(common.HexToAddress(systemcontract.SystemRewardContract)).Cmp(maxSystemBalance) < 0
