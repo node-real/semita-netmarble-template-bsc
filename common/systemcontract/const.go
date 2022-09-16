@@ -61,9 +61,6 @@ var systemContracts = map[common.Address]bool{
 	common.HexToAddress(ChainConfigContract):    true,
 	common.HexToAddress(RuntimeUpgradeContract): true,
 	common.HexToAddress(DeployerProxyContract):  true,
-	// custom smart contracts
-	common.HexToAddress(RewardContract):  true,
-	common.HexToAddress(ReserveContract): true,
 }
 
 func IsSystemContract(address common.Address) bool {
