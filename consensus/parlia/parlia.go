@@ -1069,6 +1069,7 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 		// if we have enabled block rewards and rewards are greater than 0 then
 		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
 			state.AddBalance(coinbase, blockRewards)
+			balance = balance.Add(balance, blockRewards)
 		}
 	}
 	// remove 1/16 reward according to netmarble
