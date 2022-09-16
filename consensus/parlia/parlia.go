@@ -1060,15 +1060,16 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	balance := state.GetBalance(consensus.SystemAddress)
 	state.SetBalance(consensus.SystemAddress, big.NewInt(0))
 	state.AddBalance(coinbase, balance)
+	rewards := big.NewInt(0).Abs(balance)
 	if rules := p.chainConfig.Rules(header.Number); rules.HasBlockRewards {
 		blockRewards := p.chainConfig.Parlia.BlockRewards
 		// if we have enabled block rewards and rewards are greater than 0 then
 		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
 			state.AddBalance(coinbase, blockRewards)
-			balance = balance.Add(balance, blockRewards)
+			rewards = rewards.Add(rewards, blockRewards)
 		}
 	}
-	if balance.Cmp(common.Big0) <= 0 {
+	if rewards.Cmp(common.Big0) <= 0 {
 		return nil
 	}
 	// remove 1/16 reward according to netmarble
@@ -1085,8 +1086,8 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	//		balance = balance.Sub(balance, rewards)
 	//	}
 	//}
-	log.Trace("distribute to validator contract", "block hash", header.Hash(), "amount", balance)
-	return p.distributeToValidator(balance, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
+	log.Trace("distribute to validator contract", "block hash", header.Hash(), "amount", rewards)
+	return p.distributeToValidator(rewards, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 }
 
 // slash spoiled validators
