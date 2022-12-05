@@ -26,6 +26,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// Genesis hashes to enforce below configs on.
+var (
+	MainnetGenesisHash = common.HexToHash("0xfa69a49fcf580493aac06f4107e2bc2772d529efb6e45b5b11361873231927a6")
+	TestnetGenesisHash = common.HexToHash("0x03855583dcd00f48cc4533b7f98a3f9e0b57ee5496a7e8a61c29c9169d5b98a5")
+)
+
 var (
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Ethash consensus.
@@ -51,6 +57,7 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
+		nil,
 		nil,
 		nil,
 		nil,
@@ -81,6 +88,7 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		nil,
+		nil,
 		&CliqueConfig{Period: 0, Epoch: 30000},
 		nil,
 	}
@@ -104,6 +112,7 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
+		nil,
 		nil,
 		nil, nil,
 	}
@@ -194,6 +203,7 @@ type ChainConfig struct {
 	BrunoBlock      *big.Int `json:"brunoBlock,omitempty" toml:",omitempty"`      // brunoBlock switch block (nil = no fork, 0 = already activated)
 
 	BlockRewardsBlock *big.Int `json:"blockRewardsBlock,omitempty" toml:",omitempty"`
+	H2Block           *big.Int `json:"h2Block,omitempty" toml:",omitempty"`
 
 	// Various consensus engines
 	Clique *CliqueConfig `json:"clique,omitempty" toml:",omitempty"`
@@ -234,7 +244,7 @@ func (c *ChainConfig) String() string {
 	default:
 		engine = "unknown"
 	}
-	return fmt.Sprintf("{ChainID: %v Homestead: %v EIP150: %v EIP155: %v EIP158: %v Byzantium: %v Constantinople: %v Petersburg: %v Istanbul: %v, Muir Glacier: %v, Ramanujan: %v, Niels: %v, MirrorSync: %v, Bruno: %v, Berlin: %v, YOLO v3: %v, Engine: %v}",
+	return fmt.Sprintf("{ChainID: %v Homestead: %v EIP150: %v EIP155: %v EIP158: %v Byzantium: %v Constantinople: %v Petersburg: %v Istanbul: %v, Muir Glacier: %v, Ramanujan: %v, Niels: %v, MirrorSync: %v, Bruno: %v, Berlin: %v, YOLO v3: %v, H2: %v, Engine: %v}",
 		c.ChainID,
 		c.HomesteadBlock,
 		c.EIP150Block,
@@ -251,6 +261,7 @@ func (c *ChainConfig) String() string {
 		c.BrunoBlock,
 		c.BerlinBlock,
 		c.YoloV3Block,
+		c.H2Block,
 		engine,
 	)
 }
@@ -369,6 +380,16 @@ func (c *ChainConfig) IsBlockRewardsBlock(num *big.Int) bool {
 	return isForked(c.BlockRewardsBlock, num)
 }
 
+// IsH2 returns whether num is either equal to the H2 fork block or greater.
+func (c *ChainConfig) IsH2(num *big.Int) bool {
+	return isForked(c.H2Block, num)
+}
+
+// IsOnH2 returns whether num is equal to the H2 fork block
+func (c *ChainConfig) IsOnH2(num *big.Int) bool {
+	return configNumEqual(c.H2Block, num)
+}
+
 // CheckCompatible checks whether scheduled fork transitions have been imported
 // with a mismatching chain configuration.
 func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64) *ConfigCompatError {
@@ -475,6 +496,12 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, head *big.Int) *Confi
 	if isForkIncompatible(c.BrunoBlock, newcfg.BrunoBlock, head) {
 		return newCompatError("bruno fork block", c.BrunoBlock, newcfg.BrunoBlock)
 	}
+	if isForkIncompatible(c.BlockRewardsBlock, newcfg.BlockRewardsBlock, head) {
+		return newCompatError("blockReward fork block", c.BlockRewardsBlock, newcfg.BlockRewardsBlock)
+	}
+	if isForkIncompatible(c.H2Block, newcfg.H2Block, head) {
+		return newCompatError("h2 fork block", c.H2Block, newcfg.H2Block)
+	}
 	return nil
 }
 
@@ -543,8 +570,9 @@ type Rules struct {
 	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
 	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
 	IsBerlin, IsCatalyst                                    bool
-	HasRuntimeUpgrade, HasDeployerProxy bool
-	HasBlockRewards      bool
+	HasRuntimeUpgrade, HasDeployerProxy                     bool
+	HasBlockRewards                                         bool
+	IsH2                                                    bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -554,19 +582,20 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 		chainID = new(big.Int)
 	}
 	return Rules{
-		ChainID:              new(big.Int).Set(chainID),
-		IsHomestead:          c.IsHomestead(num),
-		IsEIP150:             c.IsEIP150(num),
-		IsEIP155:             c.IsEIP155(num),
-		IsEIP158:             c.IsEIP158(num),
-		IsByzantium:          c.IsByzantium(num),
-		IsConstantinople:     c.IsConstantinople(num),
-		IsPetersburg:         c.IsPetersburg(num),
-		IsIstanbul:           c.IsIstanbul(num),
-		IsBerlin:             c.IsBerlin(num),
-		IsCatalyst:           c.IsCatalyst(num),
-		HasRuntimeUpgrade:    c.HasRuntimeUpgrade(num),
-		HasDeployerProxy:     c.HasDeployerProxy(num),
-		HasBlockRewards:      c.IsBlockRewardsBlock(num),
+		ChainID:           new(big.Int).Set(chainID),
+		IsHomestead:       c.IsHomestead(num),
+		IsEIP150:          c.IsEIP150(num),
+		IsEIP155:          c.IsEIP155(num),
+		IsEIP158:          c.IsEIP158(num),
+		IsByzantium:       c.IsByzantium(num),
+		IsConstantinople:  c.IsConstantinople(num),
+		IsPetersburg:      c.IsPetersburg(num),
+		IsIstanbul:        c.IsIstanbul(num),
+		IsBerlin:          c.IsBerlin(num),
+		IsCatalyst:        c.IsCatalyst(num),
+		HasRuntimeUpgrade: c.HasRuntimeUpgrade(num),
+		HasDeployerProxy:  c.HasDeployerProxy(num),
+		HasBlockRewards:   c.IsBlockRewardsBlock(num),
+		IsH2:              c.IsH2(num),
 	}
 }

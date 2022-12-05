@@ -25,6 +25,7 @@ import (
 	mapset "github.com/deckarep/golang-set"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/systemcontract"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/parlia"
 	"github.com/ethereum/go-ethereum/core"
@@ -927,6 +928,10 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		log.Error("Failed to create mining context", "err", err)
 		return
 	}
+
+	// Create the current work task and check any fork transitions needed
+	env := w.current
+	systemcontract.UpgradeBuildInSystemContract(w.chainConfig, header.Number, env.state)
 	// Accumulate the uncles for the current block
 	uncles := make([]*types.Header, 0)
 	// Create an empty block based on temporary copied state for
