@@ -225,7 +225,8 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = stack.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = core.NewEnhanceTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI))
+	//getCurrentGasPriceFunc
+	eth.txPool = core.NewEnhanceTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI), getCurrentGasPriceFunc(ethAPI))
 
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
@@ -598,6 +599,45 @@ func (s *Ethereum) Stop() error {
 	s.eventMux.Stop()
 
 	return nil
+}
+func getCurrentGasPriceFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (*big.Int, error) {
+	return func(blockHash common.Hash) (*big.Int, error) {
+		// block
+		blockNr := rpc.BlockNumberOrHashWithHash(blockHash, false)
+		// method
+		method := "getGasPrice"
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // cancel when we are finished consuming integers
+		chainConfig, err := abi.JSON(strings.NewReader(chainConfigABI))
+		if err != nil {
+			log.Error("Unable to abi.JSON for getGasPrice", "error", err)
+			return nil, err
+		}
+		data, err := chainConfig.Pack(method)
+		if err != nil {
+			log.Error("Unable to pack tx for getGasPrice", "error", err)
+			return nil, err
+		}
+		// call
+		msgData := (hexutil.Bytes)(data)
+		toAddress := common.HexToAddress(systemcontract.ChainConfigContract)
+		gas := (hexutil.Uint64)(uint64(math.MaxUint64 / 2))
+		result, err := ee.Call(ctx, ethapi.CallArgs{
+			Gas:  &gas,
+			To:   &toAddress,
+			Data: &msgData,
+		}, blockNr, nil)
+		if err != nil {
+			return nil, err
+		}
+		out := big.NewInt(0)
+		if err := chainConfig.UnpackIntoInterface(out, method, result); err != nil {
+			return nil, err
+		}
+		return out, nil
+
+	}
 }
 
 // getCurrentGasFreeAddressMapFunc get current GasFreeAddressMapFunc

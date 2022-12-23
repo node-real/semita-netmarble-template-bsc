@@ -1054,12 +1054,15 @@ func (p *Parlia) getCurrentValidators(blockHash common.Hash) ([]common.Address, 
 }
 func (p *Parlia) BlockRewards(blockNumber *big.Int) *big.Int {
 	if rules := p.chainConfig.Rules(blockNumber); rules.HasBlockRewards {
+		if p.chainConfig.Parlia.StopMintBlock.Cmp(blockNumber) >= 0 {
+			return big.NewInt(0)
+		}
 		blockRewards := p.chainConfig.Parlia.BlockRewards
 		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
 			return blockRewards
 		}
 	}
-	return nil
+	return big.NewInt(0)
 }
 
 // slash spoiled validators
@@ -1070,16 +1073,14 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	state.SetBalance(consensus.SystemAddress, big.NewInt(0))
 	state.AddBalance(coinbase, balance)
 	rewards := big.NewInt(0).Abs(balance)
-	if rules := p.chainConfig.Rules(header.Number); rules.HasBlockRewards {
-		blockRewards := p.chainConfig.Parlia.BlockRewards
-		// if we have enabled block rewards and rewards are greater than 0 then
-		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
-			state.AddBalance(coinbase, blockRewards)
-			rewards = rewards.Add(rewards, blockRewards)
-		}
-	}
+	blockRewards := p.BlockRewards(header.Number)
+	rewards = rewards.Add(rewards, blockRewards)
 	if rewards.Cmp(common.Big0) <= 0 {
 		return nil
+	}
+	if p.chainConfig.IsFncy2(header.Number) {
+
+		return p.distributeRewards(rewards, blockRewards, balance, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 	}
 	// remove 1/16 reward according to netmarble
 	//doDistributeSysReward := state.GetBalance(common.HexToAddress(systemcontract.SystemRewardContract)).Cmp(maxSystemBalance) < 0
@@ -1156,6 +1157,27 @@ func (p *Parlia) distributeToSystem(amount *big.Int, state *state.StateDB, heade
 	txs *[]*types.Transaction, receipts *[]*types.Receipt, receivedTxs *[]*types.Transaction, usedGas *uint64, mining bool) error {
 	// get system message
 	msg := p.getSystemMessage(header.Coinbase, common.HexToAddress(systemcontract.SystemRewardContract), nil, amount)
+	// apply message
+	return p.applyTransaction(msg, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
+}
+
+// slash spoiled validators
+func (p *Parlia) distributeRewards(amount *big.Int, blockRewards *big.Int, gasFee *big.Int, validator common.Address,
+	state *state.StateDB, header *types.Header, chain core.ChainContext,
+	txs *[]*types.Transaction, receipts *[]*types.Receipt, receivedTxs *[]*types.Transaction, usedGas *uint64, mining bool) error {
+	// method
+	method := "distributeRewards"
+
+	// get packed data
+	data, err := p.validatorSetABI.Pack(method,
+		validator, blockRewards, gasFee,
+	)
+	if err != nil {
+		log.Error("Unable to pack tx for distributeRewards", "error", err)
+		return err
+	}
+	// get system message
+	msg := p.getSystemMessage(header.Coinbase, common.HexToAddress(systemcontract.ValidatorContract), data, amount)
 	// apply message
 	return p.applyTransaction(msg, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 }

@@ -46,7 +46,9 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
+		big.NewInt(0),
 		nil, nil, nil, nil,
+		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
@@ -75,7 +77,9 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
+		big.NewInt(0),
 		nil, nil, nil, nil,
+		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
@@ -99,7 +103,9 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
+		big.NewInt(0),
 		nil, nil, nil, nil,
+		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
@@ -171,9 +177,9 @@ type ChainConfig struct {
 	EIP150Block *big.Int    `json:"eip150Block,omitempty"` // EIP150 HF block (nil = no fork)
 	EIP150Hash  common.Hash `json:"eip150Hash,omitempty"`  // EIP150 HF hash (needed for header only clients as only gas pricing changed)
 
-	EIP155Block *big.Int `json:"eip155Block,omitempty"` // EIP155 HF block
-	EIP158Block *big.Int `json:"eip158Block,omitempty"` // EIP158 HF block
-
+	EIP155Block         *big.Int `json:"eip155Block,omitempty"`         // EIP155 HF block
+	EIP158Block         *big.Int `json:"eip158Block,omitempty"`         // EIP158 HF block
+	EIP3860Block        *big.Int `json:"eip3860Block,omitempty"`        // EIP3860 HF block
 	ByzantiumBlock      *big.Int `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
 	ConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
 	PetersburgBlock     *big.Int `json:"petersburgBlock,omitempty"`     // Petersburg switch block (nil = same as Constantinople)
@@ -188,11 +194,11 @@ type ChainConfig struct {
 	EWASMBlock    *big.Int `json:"ewasmBlock,omitempty"`    // EWASM switch block (nil = no fork, 0 = already activated)	RamanujanBlock      *big.Int `json:"ramanujanBlock,omitempty" toml:",omitempty"`      // ramanujanBlock switch block (nil = no fork, 0 = already activated)
 	CatalystBlock *big.Int `json:"catalystBlock,omitempty"` // Catalyst switch block (nil = no fork, 0 = already on catalyst)
 
-	RamanujanBlock  *big.Int `json:"ramanujanBlock,omitempty" toml:",omitempty"`  // ramanujanBlock switch block (nil = no fork, 0 = already activated)
-	NielsBlock      *big.Int `json:"nielsBlock,omitempty" toml:",omitempty"`      // nielsBlock switch block (nil = no fork, 0 = already activated)
-	MirrorSyncBlock *big.Int `json:"mirrorSyncBlock,omitempty" toml:",omitempty"` // mirrorSyncBlock switch block (nil = no fork, 0 = already activated)
-	BrunoBlock      *big.Int `json:"brunoBlock,omitempty" toml:",omitempty"`      // brunoBlock switch block (nil = no fork, 0 = already activated)
-
+	RamanujanBlock    *big.Int `json:"ramanujanBlock,omitempty" toml:",omitempty"`  // ramanujanBlock switch block (nil = no fork, 0 = already activated)
+	NielsBlock        *big.Int `json:"nielsBlock,omitempty" toml:",omitempty"`      // nielsBlock switch block (nil = no fork, 0 = already activated)
+	MirrorSyncBlock   *big.Int `json:"mirrorSyncBlock,omitempty" toml:",omitempty"` // mirrorSyncBlock switch block (nil = no fork, 0 = already activated)
+	BrunoBlock        *big.Int `json:"brunoBlock,omitempty" toml:",omitempty"`      // brunoBlock switch block (nil = no fork, 0 = already activated)
+	Fncy2Block        *big.Int `json:"fncy2Block,omitempty" toml:",omitempty"`      // fncy2Block switch block (nil = no fork, 0 = already activated)
 	BlockRewardsBlock *big.Int `json:"blockRewardsBlock,omitempty" toml:",omitempty"`
 
 	// Various consensus engines
@@ -213,9 +219,10 @@ func (c *CliqueConfig) String() string {
 
 // ParliaConfig is the consensus engine configs for proof-of-staked-authority based sealing.
 type ParliaConfig struct {
-	Period       uint64   `json:"period"`       // Number of seconds between blocks to enforce
-	Epoch        uint64   `json:"epoch"`        // Epoch length to update validatorSet
-	BlockRewards *big.Int `json:"blockRewards"` // Block rewards to be paid for each produced block
+	Period        uint64   `json:"period"`        // Number of seconds between blocks to enforce
+	Epoch         uint64   `json:"epoch"`         // Epoch length to update validatorSet
+	BlockRewards  *big.Int `json:"blockRewards"`  // Block rewards to be paid for each produced block
+	StopMintBlock *big.Int `json:"stopMintBlock"` // Do not continue minting after configuring the block
 }
 
 // String implements the stringer interface, returning the consensus engine details.
@@ -273,6 +280,13 @@ func (c *ChainConfig) IsEIP155(num *big.Int) bool {
 // IsEIP158 returns whether num is either equal to the EIP158 fork block or greater.
 func (c *ChainConfig) IsEIP158(num *big.Int) bool {
 	return isForked(c.EIP158Block, num)
+}
+
+func (c *ChainConfig) IsEIP3860(num *big.Int) bool {
+	return isForked(c.EIP3860Block, num)
+}
+func (c *ChainConfig) IsFncy2(num *big.Int) bool {
+	return isForked(c.Fncy2Block, num)
 }
 
 // IsByzantium returns whether num is either equal to the Byzantium fork block or greater.
@@ -540,11 +554,11 @@ func (err *ConfigCompatError) Error() string {
 // phases.
 type Rules struct {
 	ChainID                                                 *big.Int
-	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158, IsEIP3860    bool
 	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
 	IsBerlin, IsCatalyst                                    bool
-	HasRuntimeUpgrade, HasDeployerProxy bool
-	HasBlockRewards      bool
+	HasRuntimeUpgrade, HasDeployerProxy                     bool
+	HasBlockRewards                                         bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -554,19 +568,20 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 		chainID = new(big.Int)
 	}
 	return Rules{
-		ChainID:              new(big.Int).Set(chainID),
-		IsHomestead:          c.IsHomestead(num),
-		IsEIP150:             c.IsEIP150(num),
-		IsEIP155:             c.IsEIP155(num),
-		IsEIP158:             c.IsEIP158(num),
-		IsByzantium:          c.IsByzantium(num),
-		IsConstantinople:     c.IsConstantinople(num),
-		IsPetersburg:         c.IsPetersburg(num),
-		IsIstanbul:           c.IsIstanbul(num),
-		IsBerlin:             c.IsBerlin(num),
-		IsCatalyst:           c.IsCatalyst(num),
-		HasRuntimeUpgrade:    c.HasRuntimeUpgrade(num),
-		HasDeployerProxy:     c.HasDeployerProxy(num),
-		HasBlockRewards:      c.IsBlockRewardsBlock(num),
+		ChainID:           new(big.Int).Set(chainID),
+		IsHomestead:       c.IsHomestead(num),
+		IsEIP150:          c.IsEIP150(num),
+		IsEIP155:          c.IsEIP155(num),
+		IsEIP158:          c.IsEIP158(num),
+		IsEIP3860:         c.IsEIP3860(num),
+		IsByzantium:       c.IsByzantium(num),
+		IsConstantinople:  c.IsConstantinople(num),
+		IsPetersburg:      c.IsPetersburg(num),
+		IsIstanbul:        c.IsIstanbul(num),
+		IsBerlin:          c.IsBerlin(num),
+		IsCatalyst:        c.IsCatalyst(num),
+		HasRuntimeUpgrade: c.HasRuntimeUpgrade(num),
+		HasDeployerProxy:  c.HasDeployerProxy(num),
+		HasBlockRewards:   c.IsBlockRewardsBlock(num),
 	}
 }

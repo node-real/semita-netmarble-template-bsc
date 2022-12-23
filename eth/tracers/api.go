@@ -544,7 +544,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 				}
 				if i == len(block.Transactions())-1 && tx.To().Hex() == systemcontract.ValidatorContract {
 					blockRewards := posa.BlockRewards(block.Header().Number)
-					if blockRewards != nil {
+					if blockRewards.Cmp(common.Big0) > 0 {
 						statedb.AddBalance(vmctx.Coinbase, blockRewards)
 					}
 				}
@@ -660,7 +660,7 @@ func (api *API) traceBlock(ctx context.Context, block *types.Block, config *Trac
 				}
 				if i == len(txs)-1 && tx.To().Hex() == systemcontract.ValidatorContract {
 					blockRewards := posa.BlockRewards(block.Header().Number)
-					if blockRewards != nil {
+					if blockRewards.Cmp(common.Big0) > 0 {
 						statedb.AddBalance(block.Header().Coinbase, blockRewards)
 					}
 				}
@@ -790,7 +790,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 				}
 				if i == len(block.Transactions())-1 && tx.To().Hex() == systemcontract.ValidatorContract {
 					blockRewards := posa.BlockRewards(block.Header().Number)
-					if blockRewards != nil {
+					if blockRewards.Cmp(common.Big0) > 0 {
 						statedb.AddBalance(vmctx.Coinbase, blockRewards)
 					}
 				}
@@ -963,7 +963,7 @@ func (api *API) traceTx(ctx context.Context, message core.Message, txctx *Contex
 		}
 		if txctx.TxIndex == txctx.TxCount-1 && message.To().Hex() == systemcontract.ValidatorContract {
 			blockRewards := posa.BlockRewards(vmctx.BlockNumber)
-			if blockRewards != nil {
+			if blockRewards.Cmp(common.Big0) > 0 {
 				statedb.AddBalance(vmctx.Coinbase, blockRewards)
 			}
 		}
