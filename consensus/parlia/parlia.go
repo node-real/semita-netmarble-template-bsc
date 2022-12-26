@@ -1054,7 +1054,7 @@ func (p *Parlia) getCurrentValidators(blockHash common.Hash) ([]common.Address, 
 }
 func (p *Parlia) BlockRewards(blockNumber *big.Int) *big.Int {
 	if rules := p.chainConfig.Rules(blockNumber); rules.HasBlockRewards {
-		if p.chainConfig.Parlia.StopMintBlock.Cmp(blockNumber) >= 0 {
+		if p.chainConfig.Parlia.StopMintBlock != nil && p.chainConfig.Parlia.StopMintBlock.Cmp(blockNumber) >= 0 {
 			return big.NewInt(0)
 		}
 		blockRewards := p.chainConfig.Parlia.BlockRewards
