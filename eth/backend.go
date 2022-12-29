@@ -632,11 +632,10 @@ func getCurrentGasPriceFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (*
 			return nil, err
 		}
 		out := big.NewInt(0)
-		if err := chainConfig.UnpackIntoInterface(out, method, result); err != nil {
+		if err := chainConfig.UnpackIntoInterface(&out, method, result); err != nil {
 			return nil, err
 		}
 		return out, nil
-
 	}
 }
 

@@ -1236,7 +1236,7 @@ func (s *PublicBlockChainAPI) replay(ctx context.Context, block *types.Block, ac
 				}
 				if i == len(block.Transactions())-1 && tx.To().Hex() == systemcontract.ValidatorContract {
 					blockRewards := posa.BlockRewards(block.Header().Number)
-					if blockRewards.Cmp(common.Big0) > 0 {
+					if blockRewards != nil {
 						statedb.AddBalance(context.Coinbase, blockRewards)
 					}
 				}

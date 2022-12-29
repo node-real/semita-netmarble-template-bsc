@@ -1291,16 +1291,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 			}
 		}
 	}
-	gasPrice, err := pool.gasPriceFunc(pool.chain.CurrentBlock().Hash())
-	if err != nil {
-		log.Warn("Failed to get gasPrice", "err", err)
-	} else {
-		if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
-			if pool.gasPrice.Cmp(gasPrice) != 0 {
-				pool.SetGasPrice(gasPrice)
-			}
-		}
-	}
+
 	// Inject any transactions discarded due to reorgs
 	log.Debug("Reinjecting stale transactions", "count", len(reinject))
 	senderCacher.recover(pool.signer, reinject)
@@ -1310,6 +1301,20 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	next := new(big.Int).Add(newHead.Number, big.NewInt(1))
 	pool.istanbul = pool.chainconfig.IsIstanbul(next)
 	pool.eip2718 = pool.chainconfig.IsBerlin(next)
+	if pool.chainconfig.IsFncy2(next) {
+		gasPrice, err := pool.gasPriceFunc(pool.chain.CurrentBlock().Hash())
+		if err != nil {
+			log.Warn("Failed to get gasPrice", "err", err)
+		} else {
+			if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
+				if pool.gasPrice.Cmp(gasPrice) != 0 {
+					log.Debug("Set gasPrice ", " old gasPrice", pool.gasPrice, " new gasPrice", gasPrice)
+					pool.SetGasPrice(gasPrice)
+				}
+			}
+		}
+	}
+
 }
 
 // promoteExecutables moves transactions that have become processable from the

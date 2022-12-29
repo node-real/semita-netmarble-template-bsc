@@ -1054,15 +1054,15 @@ func (p *Parlia) getCurrentValidators(blockHash common.Hash) ([]common.Address, 
 }
 func (p *Parlia) BlockRewards(blockNumber *big.Int) *big.Int {
 	if rules := p.chainConfig.Rules(blockNumber); rules.HasBlockRewards {
-		if p.chainConfig.Parlia.StopMintBlock != nil && p.chainConfig.Parlia.StopMintBlock.Cmp(blockNumber) >= 0 {
-			return big.NewInt(0)
+		if p.chainConfig.Parlia.StopMintBlock != nil && p.chainConfig.Parlia.StopMintBlock.Cmp(blockNumber) <= 0 {
+			return nil
 		}
 		blockRewards := p.chainConfig.Parlia.BlockRewards
 		if blockRewards != nil && blockRewards.Cmp(common.Big0) > 0 {
 			return blockRewards
 		}
 	}
-	return big.NewInt(0)
+	return nil
 }
 
 // slash spoiled validators
@@ -1074,7 +1074,7 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 	state.AddBalance(coinbase, balance)
 	rewards := big.NewInt(0).Abs(balance)
 	blockRewards := p.BlockRewards(header.Number)
-	if blockRewards.Cmp(common.Big0) > 0 {
+	if blockRewards != nil {
 		rewards = rewards.Add(rewards, blockRewards)
 		state.AddBalance(coinbase, blockRewards)
 	}
