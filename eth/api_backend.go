@@ -276,7 +276,9 @@ func (b *EthAPIBackend) Downloader() *downloader.Downloader {
 }
 
 func (b *EthAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
-	return b.gpo.SuggestPrice(ctx)
+	//Fncy2 Update
+	//return b.gpo.SuggestPrice(ctx)
+	return b.eth.TxPool().GasPriceWithoutLock(), nil
 }
 
 func (b *EthAPIBackend) Chain() *core.BlockChain {

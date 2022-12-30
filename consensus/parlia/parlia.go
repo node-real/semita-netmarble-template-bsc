@@ -1078,12 +1078,13 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 		rewards = rewards.Add(rewards, blockRewards)
 		state.AddBalance(coinbase, blockRewards)
 	}
-
 	if rewards.Cmp(common.Big0) <= 0 {
 		return nil
 	}
 	if p.chainConfig.IsFncy2(header.Number) {
-
+		if blockRewards == nil {
+			blockRewards = big.NewInt(0)
+		}
 		return p.distributeRewards(rewards, blockRewards, balance, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 	}
 	// remove 1/16 reward according to netmarble

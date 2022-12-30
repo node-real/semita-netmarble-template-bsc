@@ -487,8 +487,16 @@ func (pool *TxPool) SubscribeReannoTxsEvent(ch chan<- ReannoTxsEvent) event.Subs
 func (pool *TxPool) GasPrice() *big.Int {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-
 	return new(big.Int).Set(pool.gasPrice)
+}
+
+//Fncy2 Update
+func (pool *TxPool) GasPriceWithoutLock() *big.Int {
+	return new(big.Int).Set(pool.gasPrice)
+}
+func (pool *TxPool) SetGasPriceWithoutLock(price *big.Int) {
+	pool.gasPrice = price
+	log.Info("Transaction pool price threshold updated", "price", price)
 }
 
 // SetGasPrice updates the minimum price required by the transaction pool for a
@@ -559,7 +567,6 @@ func (pool *TxPool) Content() (map[common.Address]types.Transactions, map[common
 func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-
 	pending := make(map[common.Address]types.Transactions)
 	for addr, list := range pool.pending {
 		pending[addr] = list.Flatten()
@@ -1309,7 +1316,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 			if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
 				if pool.gasPrice.Cmp(gasPrice) != 0 {
 					log.Debug("Set gasPrice ", " old gasPrice", pool.gasPrice, " new gasPrice", gasPrice)
-					pool.SetGasPrice(gasPrice)
+					pool.SetGasPriceWithoutLock(gasPrice)
 				}
 			}
 		}
