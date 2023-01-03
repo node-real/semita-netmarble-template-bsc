@@ -46,8 +46,8 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
-		big.NewInt(0),
 		nil, nil, nil, nil,
+		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
@@ -77,14 +77,14 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
-		big.NewInt(0),
 		nil, nil, nil, nil,
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
-		nil,
+		big.NewInt(0),
+		big.NewInt(0),
 		&CliqueConfig{Period: 0, Epoch: 30000},
 		nil,
 	}
@@ -103,8 +103,8 @@ var (
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
-		big.NewInt(0),
 		nil, nil, nil, nil,
+		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
 		big.NewInt(0),
@@ -179,7 +179,6 @@ type ChainConfig struct {
 
 	EIP155Block         *big.Int `json:"eip155Block,omitempty"`         // EIP155 HF block
 	EIP158Block         *big.Int `json:"eip158Block,omitempty"`         // EIP158 HF block
-	EIP3860Block        *big.Int `json:"eip3860Block,omitempty"`        // EIP3860 HF block
 	ByzantiumBlock      *big.Int `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
 	ConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
 	PetersburgBlock     *big.Int `json:"petersburgBlock,omitempty"`     // Petersburg switch block (nil = same as Constantinople)
@@ -198,9 +197,9 @@ type ChainConfig struct {
 	NielsBlock        *big.Int `json:"nielsBlock,omitempty" toml:",omitempty"`      // nielsBlock switch block (nil = no fork, 0 = already activated)
 	MirrorSyncBlock   *big.Int `json:"mirrorSyncBlock,omitempty" toml:",omitempty"` // mirrorSyncBlock switch block (nil = no fork, 0 = already activated)
 	BrunoBlock        *big.Int `json:"brunoBlock,omitempty" toml:",omitempty"`      // brunoBlock switch block (nil = no fork, 0 = already activated)
-	Fncy2Block        *big.Int `json:"fncy2Block,omitempty" toml:",omitempty"`      // fncy2Block switch block (nil = no fork, 0 = already activated)
 	BlockRewardsBlock *big.Int `json:"blockRewardsBlock,omitempty" toml:",omitempty"`
-
+	Contract48kBlock  *big.Int `json:"contract48kBlock,omitempty" toml:",omitempty"` // contract48kBlock switch block (nil = no fork, 0 = already activated)
+	Fncy2Block        *big.Int `json:"fncy2Block,omitempty" toml:",omitempty"`       // fncy2Block switch block (nil = no fork, 0 = already activated)
 	// Various consensus engines
 	Clique *CliqueConfig `json:"clique,omitempty" toml:",omitempty"`
 	Parlia *ParliaConfig `json:"parlia,omitempty" toml:",omitempty"`
@@ -282,8 +281,8 @@ func (c *ChainConfig) IsEIP158(num *big.Int) bool {
 	return isForked(c.EIP158Block, num)
 }
 
-func (c *ChainConfig) IsEIP3860(num *big.Int) bool {
-	return isForked(c.EIP3860Block, num)
+func (c *ChainConfig) IsContract48kBlock(num *big.Int) bool {
+	return isForked(c.Contract48kBlock, num)
 }
 func (c *ChainConfig) IsFncy2(num *big.Int) bool {
 	return isForked(c.Fncy2Block, num)
@@ -553,12 +552,12 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                                 *big.Int
-	IsHomestead, IsEIP150, IsEIP155, IsEIP158, IsEIP3860    bool
-	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
-	IsBerlin, IsCatalyst                                    bool
-	HasRuntimeUpgrade, HasDeployerProxy                     bool
-	HasBlockRewards                                         bool
+	ChainID                                                       *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158, IsContract48kBlock bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul       bool
+	IsBerlin, IsCatalyst                                          bool
+	HasRuntimeUpgrade, HasDeployerProxy                           bool
+	HasBlockRewards                                               bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -568,20 +567,20 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 		chainID = new(big.Int)
 	}
 	return Rules{
-		ChainID:           new(big.Int).Set(chainID),
-		IsHomestead:       c.IsHomestead(num),
-		IsEIP150:          c.IsEIP150(num),
-		IsEIP155:          c.IsEIP155(num),
-		IsEIP158:          c.IsEIP158(num),
-		IsEIP3860:         c.IsEIP3860(num),
-		IsByzantium:       c.IsByzantium(num),
-		IsConstantinople:  c.IsConstantinople(num),
-		IsPetersburg:      c.IsPetersburg(num),
-		IsIstanbul:        c.IsIstanbul(num),
-		IsBerlin:          c.IsBerlin(num),
-		IsCatalyst:        c.IsCatalyst(num),
-		HasRuntimeUpgrade: c.HasRuntimeUpgrade(num),
-		HasDeployerProxy:  c.HasDeployerProxy(num),
-		HasBlockRewards:   c.IsBlockRewardsBlock(num),
+		ChainID:            new(big.Int).Set(chainID),
+		IsHomestead:        c.IsHomestead(num),
+		IsEIP150:           c.IsEIP150(num),
+		IsEIP155:           c.IsEIP155(num),
+		IsEIP158:           c.IsEIP158(num),
+		IsContract48kBlock: c.IsContract48kBlock(num),
+		IsByzantium:        c.IsByzantium(num),
+		IsConstantinople:   c.IsConstantinople(num),
+		IsPetersburg:       c.IsPetersburg(num),
+		IsIstanbul:         c.IsIstanbul(num),
+		IsBerlin:           c.IsBerlin(num),
+		IsCatalyst:         c.IsCatalyst(num),
+		HasRuntimeUpgrade:  c.HasRuntimeUpgrade(num),
+		HasDeployerProxy:   c.HasDeployerProxy(num),
+		HasBlockRewards:    c.IsBlockRewardsBlock(num),
 	}
 }
