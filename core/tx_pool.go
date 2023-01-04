@@ -494,6 +494,7 @@ func (pool *TxPool) GasPrice() *big.Int {
 func (pool *TxPool) GasPriceWithoutLock() *big.Int {
 	return new(big.Int).Set(pool.gasPrice)
 }
+
 func (pool *TxPool) SetGasPriceWithoutLock(price *big.Int) {
 	pool.gasPrice = price
 	log.Info("Transaction pool price threshold updated", "price", price)
@@ -1308,6 +1309,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	next := new(big.Int).Add(newHead.Number, big.NewInt(1))
 	pool.istanbul = pool.chainconfig.IsIstanbul(next)
 	pool.eip2718 = pool.chainconfig.IsBerlin(next)
+	//fncy2 update
 	if pool.chainconfig.IsFncy2(next) {
 		gasPrice, err := pool.gasPriceFunc(pool.chain.CurrentBlock().Hash())
 		if err != nil {
