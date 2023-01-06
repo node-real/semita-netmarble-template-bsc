@@ -19,6 +19,7 @@ package eth
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -279,12 +280,14 @@ func (b *EthAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 	//Fncy2 Update
 	if b.ChainConfig().IsFncy2(b.Chain().CurrentBlock().Header().Number) {
 		suggestPrice, err := b.gpo.SuggestPrice(ctx)
-		if err != nil {
-			gasprice := b.eth.TxPool().GasPriceWithoutLock()
+		gasprice := b.eth.TxPool().GasPriceWithoutLock()
+		if err == nil {
 			if suggestPrice.Cmp(gasprice) < 0 {
 				return gasprice, nil
 			}
 		}
+		log.Warn("gpo.SuggestPrice ", "error ", err)
+		return gasprice, nil
 	}
 	return b.gpo.SuggestPrice(ctx)
 }
