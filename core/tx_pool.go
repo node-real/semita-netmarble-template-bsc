@@ -253,6 +253,7 @@ type TxPool struct {
 
 	gasFreeAddressMap     map[common.Address]uint                            // from address that can join tx_pool for free
 	gasFreeAddressMapFunc func(common.Hash) (map[common.Address]uint, error) // add func to get gasFreeAddressMap
+	gasPriceFunc          func(common.Hash) (*big.Int, error)                // add func to get gas price, do nothing when return 0
 
 	pending map[common.Address]*txList   // All currently processable transactions
 	queue   map[common.Address]*txList   // Queued but non-processable transactions
@@ -283,11 +284,17 @@ func getNoGasFreeAddressMapFunc() func(common.Hash) (map[common.Address]uint, er
 		return gasFreeToAddressMap, nil
 	}
 }
+func getGasPriceFunc() func(common.Hash) (*big.Int, error) {
+	return func(blockHash common.Hash) (*big.Int, error) {
+		return big.NewInt(0), nil
+	}
+}
+
 func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
 
-	return NewEnhanceTxPool(config, chainconfig, chain, getNoGasFreeAddressMapFunc())
+	return NewEnhanceTxPool(config, chainconfig, chain, getNoGasFreeAddressMapFunc(), getGasPriceFunc())
 }
-func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]uint, error)) *TxPool {
+func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain, gasFreeAddressMapFunc func(common.Hash) (map[common.Address]uint, error), gasPriceFunc func(common.Hash) (*big.Int, error)) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -309,6 +316,7 @@ func NewEnhanceTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chai
 		gasPrice:              new(big.Int).SetUint64(config.PriceLimit),
 		gasFreeAddressMap:     make(map[common.Address]uint),
 		gasFreeAddressMapFunc: gasFreeAddressMapFunc,
+		gasPriceFunc:          gasPriceFunc,
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -479,8 +487,17 @@ func (pool *TxPool) SubscribeReannoTxsEvent(ch chan<- ReannoTxsEvent) event.Subs
 func (pool *TxPool) GasPrice() *big.Int {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-
 	return new(big.Int).Set(pool.gasPrice)
+}
+
+//Fncy2 Update
+func (pool *TxPool) GasPriceWithoutLock() *big.Int {
+	return new(big.Int).Set(pool.gasPrice)
+}
+
+func (pool *TxPool) SetGasPriceWithoutLock(price *big.Int) {
+	pool.gasPrice = price
+	log.Info("Transaction pool price threshold updated", "price", price)
 }
 
 // SetGasPrice updates the minimum price required by the transaction pool for a
@@ -551,7 +568,6 @@ func (pool *TxPool) Content() (map[common.Address]types.Transactions, map[common
 func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-
 	pending := make(map[common.Address]types.Transactions)
 	for addr, list := range pool.pending {
 		pending[addr] = list.Flatten()
@@ -1293,6 +1309,21 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	next := new(big.Int).Add(newHead.Number, big.NewInt(1))
 	pool.istanbul = pool.chainconfig.IsIstanbul(next)
 	pool.eip2718 = pool.chainconfig.IsBerlin(next)
+	//fncy2 update
+	if pool.chainconfig.IsFncy2(next) {
+		gasPrice, err := pool.gasPriceFunc(pool.chain.CurrentBlock().Hash())
+		if err != nil {
+			log.Warn("Failed to get gasPrice", "err", err)
+		} else {
+			if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
+				if pool.gasPrice.Cmp(gasPrice) != 0 {
+					log.Debug("Set gasPrice ", " old gasPrice", pool.gasPrice, " new gasPrice", gasPrice)
+					pool.SetGasPriceWithoutLock(gasPrice)
+				}
+			}
+		}
+	}
+
 }
 
 // promoteExecutables moves transactions that have become processable from the

@@ -276,6 +276,16 @@ func (b *EthAPIBackend) Downloader() *downloader.Downloader {
 }
 
 func (b *EthAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
+	//Fncy2 Update
+	if b.ChainConfig().IsFncy2(b.Chain().CurrentBlock().Header().Number) {
+		suggestPrice, err := b.gpo.SuggestPrice(ctx)
+		if err != nil {
+			gasprice := b.eth.TxPool().GasPriceWithoutLock()
+			if suggestPrice.Cmp(gasprice) < 0 {
+				return gasprice, nil
+			}
+		}
+	}
 	return b.gpo.SuggestPrice(ctx)
 }
 
