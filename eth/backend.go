@@ -226,7 +226,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		config.TxPool.Journal = stack.ResolvePath(config.TxPool.Journal)
 	}
 	//getCurrentGasPriceFunc
-	eth.txPool = core.NewEnhanceTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI), getCurrentGasPriceFunc(ethAPI))
+	eth.txPool = core.NewEnhanceTxPool(config.TxPool, chainConfig, eth.blockchain, getCurrentGasFreeAddressMapFunc(ethAPI), getCurrentGasPriceFunc(eth, ethAPI))
 
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
@@ -600,7 +600,7 @@ func (s *Ethereum) Stop() error {
 
 	return nil
 }
-func getCurrentGasPriceFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (*big.Int, error) {
+func getCurrentGasPriceFunc(eth *Ethereum, ee *ethapi.PublicBlockChainAPI) func(common.Hash) (*big.Int, error) {
 	return func(blockHash common.Hash) (*big.Int, error) {
 		// block
 		blockNr := rpc.BlockNumberOrHashWithHash(blockHash, false)
@@ -631,11 +631,16 @@ func getCurrentGasPriceFunc(ee *ethapi.PublicBlockChainAPI) func(common.Hash) (*
 		if err != nil {
 			return nil, err
 		}
-		out := big.NewInt(0)
-		if err := chainConfig.UnpackIntoInterface(&out, method, result); err != nil {
+		gasPrice := big.NewInt(0)
+		if err := chainConfig.UnpackIntoInterface(&gasPrice, method, result); err != nil {
 			return nil, err
 		}
-		return out, nil
+		if gasPrice != nil && eth.APIBackend.gpo != nil && gasPrice.Cmp(common.Big0) > 0 {
+			if eth.APIBackend.gpo.GetDefaultPrice() == nil || eth.APIBackend.gpo.GetDefaultPrice().Cmp(gasPrice) != 0 {
+				eth.APIBackend.gpo.SetDefaultPrice(gasPrice)
+			}
+		}
+		return gasPrice, nil
 	}
 }
 

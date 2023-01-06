@@ -1316,7 +1316,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 			log.Warn("Failed to get gasPrice", "err", err)
 		} else {
 			if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
-				if pool.gasPrice.Cmp(gasPrice) != 0 {
+				if pool.gasPrice == nil || pool.gasPrice.Cmp(gasPrice) != 0 {
 					log.Debug("Set gasPrice ", " old gasPrice", pool.gasPrice, " new gasPrice", gasPrice)
 					pool.SetGasPriceWithoutLock(gasPrice)
 				}

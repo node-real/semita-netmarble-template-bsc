@@ -98,6 +98,13 @@ func NewOracle(backend OracleBackend, params Config) *Oracle {
 	}
 }
 
+func (gpo *Oracle) SetDefaultPrice(defaultPrice *big.Int) {
+	gpo.defaultPrice = defaultPrice
+}
+func (gpo *Oracle) GetDefaultPrice() *big.Int {
+	return gpo.defaultPrice
+}
+
 // SuggestPrice returns a gasprice so that newly created transaction can
 // have a very high chance to be included in the following blocks.
 func (gpo *Oracle) SuggestPrice(ctx context.Context) (*big.Int, error) {
