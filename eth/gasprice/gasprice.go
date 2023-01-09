@@ -105,6 +105,13 @@ func (gpo *Oracle) GetDefaultPrice() *big.Int {
 	return gpo.defaultPrice
 }
 
+func (gpo *Oracle) SetMaxPrice(maxPrice *big.Int) {
+	gpo.maxPrice = maxPrice
+}
+func (gpo *Oracle) GetMaxPrice() *big.Int {
+	return gpo.maxPrice
+}
+
 // SuggestPrice returns a gasprice so that newly created transaction can
 // have a very high chance to be included in the following blocks.
 func (gpo *Oracle) SuggestPrice(ctx context.Context) (*big.Int, error) {

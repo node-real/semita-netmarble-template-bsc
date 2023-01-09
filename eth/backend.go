@@ -64,6 +64,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+var maxPrice = big.NewInt(1200000 * params.GWei)
+
 // Config contains the configuration options of the ETH protocol.
 // Deprecated: use ethconfig.Config instead.
 type Config = ethconfig.Config
@@ -638,6 +640,9 @@ func getCurrentGasPriceFunc(eth *Ethereum, ee *ethapi.PublicBlockChainAPI) func(
 		if gasPrice != nil && eth.APIBackend.gpo != nil && gasPrice.Cmp(common.Big0) > 0 {
 			if eth.APIBackend.gpo.GetDefaultPrice() == nil || eth.APIBackend.gpo.GetDefaultPrice().Cmp(gasPrice) != 0 {
 				eth.APIBackend.gpo.SetDefaultPrice(gasPrice)
+			}
+			if eth.APIBackend.gpo.GetMaxPrice() == nil || eth.APIBackend.gpo.GetMaxPrice().Cmp(maxPrice) != 0 {
+				eth.APIBackend.gpo.SetMaxPrice(maxPrice)
 			}
 		}
 		return gasPrice, nil
