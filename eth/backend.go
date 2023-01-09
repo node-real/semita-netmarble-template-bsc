@@ -644,6 +644,12 @@ func getCurrentGasPriceFunc(eth *Ethereum, ee *ethapi.PublicBlockChainAPI) func(
 			if eth.APIBackend.gpo.GetMaxPrice() == nil || eth.APIBackend.gpo.GetMaxPrice().Cmp(maxPrice) != 0 {
 				eth.APIBackend.gpo.SetMaxPrice(maxPrice)
 			}
+			if eth.gasPrice == nil || eth.gasPrice.Cmp(gasPrice) != 0 {
+				eth.lock.Lock()
+				eth.gasPrice = gasPrice
+				eth.lock.Unlock()
+
+			}
 		}
 		return gasPrice, nil
 	}
