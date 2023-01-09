@@ -648,7 +648,6 @@ func getCurrentGasPriceFunc(eth *Ethereum, ee *ethapi.PublicBlockChainAPI) func(
 				eth.lock.Lock()
 				eth.gasPrice = gasPrice
 				eth.lock.Unlock()
-
 			}
 		}
 		return gasPrice, nil
