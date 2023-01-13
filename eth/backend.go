@@ -637,12 +637,14 @@ func getCurrentGasPriceFunc(eth *Ethereum, ee *ethapi.PublicBlockChainAPI) func(
 		if err := chainConfig.UnpackIntoInterface(&gasPrice, method, result); err != nil {
 			return nil, err
 		}
-		if gasPrice != nil && eth.APIBackend.gpo != nil && gasPrice.Cmp(common.Big0) > 0 {
-			if eth.APIBackend.gpo.GetDefaultPrice() == nil || eth.APIBackend.gpo.GetDefaultPrice().Cmp(gasPrice) != 0 {
-				eth.APIBackend.gpo.SetDefaultPrice(gasPrice)
-			}
-			if eth.APIBackend.gpo.GetMaxPrice() == nil || eth.APIBackend.gpo.GetMaxPrice().Cmp(maxPrice) != 0 {
-				eth.APIBackend.gpo.SetMaxPrice(maxPrice)
+		if gasPrice != nil && gasPrice.Cmp(common.Big0) > 0 {
+			if eth.APIBackend.gpo != nil {
+				if eth.APIBackend.gpo.GetDefaultPrice() == nil || eth.APIBackend.gpo.GetDefaultPrice().Cmp(gasPrice) != 0 {
+					eth.APIBackend.gpo.SetDefaultPrice(gasPrice)
+				}
+				if eth.APIBackend.gpo.GetMaxPrice() == nil || eth.APIBackend.gpo.GetMaxPrice().Cmp(maxPrice) != 0 {
+					eth.APIBackend.gpo.SetMaxPrice(maxPrice)
+				}
 			}
 			if eth.gasPrice == nil || eth.gasPrice.Cmp(gasPrice) != 0 {
 				eth.lock.Lock()
