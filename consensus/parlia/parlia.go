@@ -1085,6 +1085,7 @@ func (p *Parlia) distributeIncoming(val common.Address, state *state.StateDB, he
 		if blockRewards == nil {
 			blockRewards = big.NewInt(0)
 		}
+		log.Trace("fncy2 distribute to validator contract", "block hash", header.Hash(), "amount", rewards)
 		return p.distributeRewards(rewards, blockRewards, balance, val, state, header, chain, txs, receipts, receivedTxs, usedGas, mining)
 	}
 	// remove 1/16 reward according to netmarble
