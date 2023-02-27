@@ -5,9 +5,9 @@ on:
     tags:
       - v*
   push:
-    branches: [ netmarble_v1.0 ]
+    branches: [ netmarble_v1.0, netmarble_v2.0 ]
   pull_request:
-    branches: [ netmarble_v1.0 ]
+    branches: [ netmarble_v1.0, netmarble_v2.0 ]
 
 env:
   REGION: us-east-1
