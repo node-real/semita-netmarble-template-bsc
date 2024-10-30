@@ -33,7 +33,7 @@ func init() {
 	register("stateDiff", newStateDiffTracer)
 }
 
-type state = map[common.Address]*account
+type state = map[common.Address]account
 type account struct {
 	Balance string `json:"balance,omitempty"`
 	Nonce   uint64 `json:"nonce,omitempty"`
@@ -50,14 +50,15 @@ type stateDiffTracer struct {
 	env       *vm.EVM
 	pre       state
 	post      state
-	to        common.Address
 	create    bool
-	config    stateDiffTracerConfig
+	to        common.Address
 	gasLimit  uint64 // Amount of gas bought for the whole tx
 	interrupt uint32 // Atomic flag to signal execution interruption
 	reason    error  // Textual reason for the interruption
-	created   map[common.Address]bool
-	deleted   map[common.Address]bool
+
+	config  stateDiffTracerConfig
+	created map[common.Address]bool
+	deleted map[common.Address]bool
 }
 
 type stateDiffTracerConfig struct {
@@ -117,9 +118,6 @@ func (t *stateDiffTracer) CaptureStart(env *vm.EVM, from common.Address, to comm
 
 // CaptureEnd is called after the call finishes to finalize the tracing.
 func (t *stateDiffTracer) CaptureEnd(output []byte, gasUsed uint64, _ time.Duration, err error) {
-	if err != nil {
-		return
-	}
 	if t.config.DiffMode {
 		return
 	}
@@ -135,9 +133,6 @@ func (t *stateDiffTracer) CaptureEnd(output []byte, gasUsed uint64, _ time.Durat
 
 // CaptureState implements the EVMLogger interface to trace a single step of VM execution.
 func (t *stateDiffTracer) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
-	if err != nil {
-		return
-	}
 	stack := scope.Stack
 	stackData := stack.Data()
 	stackLen := len(stackData)
@@ -204,6 +199,7 @@ func (t *stateDiffTracer) CaptureTxEnd(restGas uint64) {
 		postAccount := account{storage: make(map[common.Hash]common.Hash)}
 		newBalance := bigToHex(t.env.StateDB.GetBalance(addr))
 		newNonce := t.env.StateDB.GetNonce(addr)
+		//newCode := t.env.StateDB.GetCode(addr)
 
 		if newBalance != t.pre[addr].Balance {
 			modified = true
@@ -215,7 +211,7 @@ func (t *stateDiffTracer) CaptureTxEnd(restGas uint64) {
 		}
 
 		if modified {
-			t.post[addr] = &postAccount
+			t.post[addr] = postAccount
 		} else {
 			// if state is not modified, then no need to include into the pre state
 			delete(t.pre, addr)
@@ -262,7 +258,7 @@ func (t *stateDiffTracer) lookupAccount(addr common.Address) {
 		return
 	}
 
-	t.pre[addr] = &account{
+	t.pre[addr] = account{
 		Balance: bigToHex(t.env.StateDB.GetBalance(addr)),
 		Nonce:   t.env.StateDB.GetNonce(addr),
 		storage: make(map[common.Hash]common.Hash),

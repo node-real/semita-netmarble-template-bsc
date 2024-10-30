@@ -63,6 +63,15 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (tracers.Tracer, e
 	return t, nil
 }
 
+// CaptureTxStart implements the Tracer interface and is invoked at the beginning of
+// transaction processing.
+func (t *callTracer) CaptureTxStart(gasLimit uint64) {
+}
+
+// CaptureTxStart implements the Tracer interface and is invoked at the end of
+// transaction processing.
+func (t *callTracer) CaptureTxEnd(restGas uint64) {}
+
 // CaptureStart implements the EVMLogger interface to initialize the tracing operation.
 func (t *callTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 	t.env = env

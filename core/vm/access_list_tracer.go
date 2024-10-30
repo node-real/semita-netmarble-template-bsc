@@ -180,3 +180,12 @@ func (a *AccessListTracer) AccessList() types.AccessList {
 func (a *AccessListTracer) Equal(other *AccessListTracer) bool {
 	return a.list.equal(other.list)
 }
+
+// CaptureTxStart implements the Tracer interface and is invoked at the beginning of
+// transaction processing.
+func (t *AccessListTracer) CaptureTxStart(gasLimit uint64) {
+}
+
+// CaptureTxStart implements the Tracer interface and is invoked at the end of
+// transaction processing.
+func (t *AccessListTracer) CaptureTxEnd(restGas uint64) {}
