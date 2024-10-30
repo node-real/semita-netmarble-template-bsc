@@ -56,11 +56,11 @@ type callTracer struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer() tracers.Tracer {
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (tracers.Tracer, error) {
 	// First callframe contains tx context info
 	// and is populated on start and end.
 	t := &callTracer{callstack: make([]callFrame, 1)}
-	return t
+	return t, nil
 }
 
 // CaptureStart implements the EVMLogger interface to initialize the tracing operation.
