@@ -42,6 +42,15 @@ func NewJSONLogger(cfg *LogConfig, writer io.Writer) *JSONLogger {
 	return l
 }
 
+// CaptureTxStart implements the Tracer interface and is invoked at the beginning of
+// transaction processing.
+func (t *JSONLogger) CaptureTxStart(gasLimit uint64) {
+}
+
+// CaptureTxStart implements the Tracer interface and is invoked at the end of
+// transaction processing.
+func (t *JSONLogger) CaptureTxEnd(restGas uint64) {}
+
 func (l *JSONLogger) CaptureStart(env *EVM, from, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 	l.env = env
 }

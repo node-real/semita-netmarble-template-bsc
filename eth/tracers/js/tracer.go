@@ -424,7 +424,7 @@ type jsTracer struct {
 // New instantiates a new tracer instance. code specifies a Javascript snippet,
 // which must evaluate to an expression returning an object with 'step', 'fault'
 // and 'result' functions.
-func newJsTracer(code string, ctx *tracers2.Context) (tracers2.Tracer, error) {
+func newJsTracer(code string, ctx *tracers2.Context, cfg json.RawMessage) (tracers2.Tracer, error) {
 	if c, ok := assetTracers[code]; ok {
 		code = c
 	}
@@ -678,6 +678,15 @@ func (jst *jsTracer) call(noret bool, method string, args ...string) (json.RawMe
 func wrapError(context string, err error) error {
 	return fmt.Errorf("%v    in server-side tracer function '%v'", err, context)
 }
+
+// CaptureTxStart implements the Tracer interface and is invoked at the beginning of
+// transaction processing.
+func (jst *jsTracer) CaptureTxStart(gasLimit uint64) {
+}
+
+// CaptureTxStart implements the Tracer interface and is invoked at the end of
+// transaction processing.
+func (t *jsTracer) CaptureTxEnd(restGas uint64) {}
 
 // CaptureStart implements the Tracer interface to initialize the tracing operation.
 func (jst *jsTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
