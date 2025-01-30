@@ -979,6 +979,7 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 	}
 	block, receipts, err := w.engine.FinalizeAndAssemble(w.chain, types.CopyHeader(w.current.header), s, w.current.txs, uncles, w.current.receipts)
 	if err != nil {
+		log.Warn("Miner worker commit failed", "block number", w.current.header.Number, " error", err)
 		return err
 	}
 	if w.isRunning() {

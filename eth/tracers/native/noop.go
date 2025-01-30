@@ -35,8 +35,14 @@ func init() {
 type noopTracer struct{}
 
 // newNoopTracer returns a new noop tracer.
-func newNoopTracer() tracers.Tracer {
-	return &noopTracer{}
+func newNoopTracer(ctx *tracers.Context, cfg json.RawMessage) (tracers.Tracer, error) {
+	return &noopTracer{}, nil
+}
+
+func (l *noopTracer) CaptureTxStart(gasLimit uint64) {
+}
+
+func (l *noopTracer) CaptureTxEnd(restGas uint64) {
 }
 
 // CaptureStart implements the EVMLogger interface to initialize the tracing operation.

@@ -311,6 +311,14 @@ func geth(ctx *cli.Context) error {
 	defer stack.Close()
 
 	startNode(ctx, stack, backend)
+
+	log.Info("***************************** CONFIG INFO ****************************")
+	log.Info("******* FNCY_2.0", "chainId", backend.ChainConfig().ChainID)
+	log.Info("******* FNCY_2.0", "contract48kBlock", backend.ChainConfig().Contract48kBlock.Int64())
+	log.Info("******* FNCY_2.0", "fncy2Block", backend.ChainConfig().Fncy2Block.Int64())
+	log.Info("******* FNCY_2.0", "stopMintBlock", backend.ChainConfig().Parlia.StopMintBlock.Int64())
+	log.Info("***************************** CONFIG INFO *****************************")
+	log.Info("Start FNCY_2.0 success")
 	stack.Wait()
 	return nil
 }
