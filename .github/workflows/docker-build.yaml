@@ -34,6 +34,9 @@ jobs:
         aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com
         docker build -t ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA} .
         docker push ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA}
+
+        docker build -t ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/faucet:${GITHUB_SHA} -f Dockerfile.alltools .
+        docker push ${ECR_REGISTRY_ID}.dkr.ecr.${REGION}.amazonaws.com/faucet:${GITHUB_SHA}
   # CD:
   #   needs: [CI]
   #   runs-on: [self-hosted,qa-infra-k8s]
